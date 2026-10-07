@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Seller Manager Pro</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #00796b;
+            --secondary-color: #d32f2f;
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 19px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .nav-tabs {
+            display: flex;
+            overflow-x: auto;
+            background: #fff;
+            padding: 10px;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+        .tab-btn {
+            background: #e0e0e0;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .container {
+            padding: 15px;
+            max-width: 850px;
+            margin: auto;
+        }
+        .section {
+            display: none;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .section.active {
+            display: block;
+        }
+        h3 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid #e0f2f1; padding-bottom: 5px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button.submit-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th { background-color: #f2f2f2; color: #333; }
+        .action-btn {
+            padding: 5px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 11px;
+            color: white;
+            margin: 2px;
+        }
+        .whatsapp-btn { background: #25D366; }
+        .call-btn { background: #007bff; }
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .dashboard-card {
+            background: #e0f2f1;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--primary-color);
+        }
+        .dashboard-card h4 { margin: 0; font-size: 12px; color: #555; }
+        .dashboard-card p { margin: 5px 0 0; font-size: 16px; font-weight: bold; color: var(--primary-color); }
+    </style>
+</head>
+<body>
+
+<header>E-Seller Manager Pro</header>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab(event, 'dashboard')">ড্যাশবোর্ড</button>
+    <button class="tab-btn" onclick="switchTab(event, 'purchase')">কাপড় ক্রয়</button>
+    <button class="tab-btn" onclick="switchTab(event, 'factory')">কারখানা</button>
+    <button class="tab-btn" onclick="switchTab(event, 'reseller')">রিসেলার</button>
+    <button class="tab-btn" onclick="switchTab(event, 'stock')">স্টক</button>
+    <button class="tab-btn" onclick="switchTab(event, 'accounts')">আয়-ব্যয় ও স্টেডফাস্ট</button>
+    <button class="tab-btn" onclick="switchTab(event, 'hr')">কর্মচারী</button>
+    <button class="tab-btn" onclick="switchTab(event, 'notepad')">নোটপ্যাড</button>
+</div>
+
+<div class="container">
+
+    <!-- ড্যাশবোর্ড -->
+    <div id="dashboard" class="section active">
+        <h3>স্মার্ট ড্যাশবোর্ড ও সারসংক্ষেপ</h3>
+        <div class="card-grid">
+            <div class="dashboard-card">
+                <h4>মোট ক্রয় খরচ</h4>
+                <p id="totalPurchaseCost">৳ 0</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>মোট আয়</h4>
+                <p id="totalIncome">৳ 0</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>মোট ব্যয়</h4>
+                <p id="totalExpense">৳ 0</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>স্টেডফাস্ট ক্যাশ</h4>
+                <p id="totalSteadfast">৳ 0</p>
+            </div>
+            <div class="dashboard-card" style="grid-column: span 2; background: #e3f2fd; border-left-color: #1976d2;">
+                <h4>মালিকের নিট মূলধন</h4>
+                <p id="ownerCapital">৳ 0</p>
+            </div>
+        </div>
+        <p style="font-size: 12px; color: #666; text-align: center;"><i>সব ডেটা রিয়েল-টাইমে সুরক্ষিত ও সিঙ্ক হচ্ছে।</i></p>
+    </div>
+
+    <!-- ১. কাপড় ক্রয় ও বিবরণ (কালার, ধরন, দাম) -->
+    <div id="purchase" class="section">
+        <h3>নতুন কাপড় ক্রয়ের হিসাব</h3>
+        <input type="text" id="purItemName" placeholder="প্রোডাক্টের নাম (যেমন: থ্রি পিস, কুর্তি ইত্যাদি)">
+        <input type="text" id="purColor" placeholder="কালার (যেমন: মেরুন, স্কাই ব্লু)">
+        <input type="text" id="purType" placeholder="ধরন/ডিজাইন (যেমন: লন কটকটি, জর্জেট)">
+        <input type="number" id="purQty" placeholder="পরিমাণ (পিস)">
+        <input type="number" id="purPrice" placeholder="মোট ক্রয়মূল্য (৳)">
+        <label style="font-size: 13px; color: #555;">তারিখ:</label>
+        <input type="date" id="purDate">
+        <button class="submit-btn" onclick="addPurchaseRecord()">ক্রয় হিসাব সংরক্ষণ</button>
+
+        <table id="purchaseTable">
+            <tr><th>তারিখ</th><th>আইটেম</th><th>কালার ও ধরন</th><th>পিস</th><th>মূল্য</th></tr>
+        </table>
+    </div>
+
+    <!-- ২. কারখানা ম্যানেজমেন্ট -->
+    <div id="factory" class="section">
+        <h3>কারখানা তালিকা ও অর্ডার</h3>
+        <input type="text" id="facRegName" placeholder="কারখানার নাম">
+        <input type="text" id="facRegPhone" placeholder="হোয়াটসঅ্যাপ/মোবাইল নম্বর (যেমন: 88017xxxxxxxx)">
+        <button class="submit-btn" onclick="addNewFactory()">কারখানা তালিকাভুক্ত করুন</button>
+
+        <h4 style="margin-top:15px; color:#333;">কারখানার তালিকা ও যোগাযোগ</h4>
+        <table id="factoryListTable">
+            <tr><th>নাম</th><th>নম্বর</th><th>অ্যাকশন</th></tr>
+        </table>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>কারখানা থেকে উৎপাদন অর্ডার</h3>
+        <select id="facOrderName"><option value="">প্রথমে কারখানা সিলেক্ট করুন</option></select>
+        <input type="text" id="facItemName" placeholder="প্রোডাক্টের নাম ও বিবরণ">
+        <input type="number" id="facQty" placeholder="পরিমাণ (পিস)">
+        <label style="font-size: 13px; color: #555;">তারিখ:</label>
+        <input type="date" id="facDate">
+        <button class="submit-btn" onclick="addFactoryRecord()">অর্ডার সংরক্ষণ</button>
+        
+        <table id="factoryTable" style="margin-top:10px;">
+            <tr><th>তারিখ</th><th>কারখানা</th><th>বিবরণ</th><th>পিস</th></tr>
+        </table>
+    </div>
+
+    <!-- ৩. রিসেলার ম্যানেজমেন্ট -->
+    <div id="reseller" class="section">
+        <h3>রিসেলার তালিকা ও লেনদেন</h3>
+        <input type="text" id="resRegName" placeholder="রিসেলারের নাম">
+        <input type="text" id="resRegPhone" placeholder="মোবাইল নম্বর (যেমন: 88017xxxxxxxx)">
+        <button class="submit-btn" onclick="addNewReseller()">রিসেলার তালিকাভুক্ত করুন</button>
+
+        <h4 style="margin-top:15px; color:#333;">রিসেলার তালিকা</h4>
+        <table id="resellerListTable">
+            <tr><th>নাম</th><th>নম্বর</th><th>কল করুন</th></tr>
+        </table>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>পণ্য বিক্রয় ও রিটার্ন হিসাব</h3>
+        <select id="resOrderName"><option value="">প্রথমে রিসেলার সিলেক্ট করুন</option></select>
+        <select id="resAction">
+            <option value="পণ্য নিয়েছে">পণ্য নিয়েছে (Out)</option>
+            <option value="পণ্য রিটার্ন দিয়েছে">পণ্য রিটার্ন দিয়েছে (Return)</option>
+        </select>
+        <input type="text" id="resItemDetails" placeholder="প্রোডাক্ট, কালার ও পরিমাণ বিবরণ">
+        <label style="font-size: 13px; color: #555;">তারিখ:</label>
+        <input type="date" id="resDate">
+        <button class="submit-btn" onclick="addResellerRecord()">লেনদেন সংরক্ষণ</button>
+
+        <table id="resellerTable" style="margin-top:10px;">
+            <tr><th>তারিখ</th><th>নাম</th><th>অবস্থা</th><th>বিবরণ</th></tr>
+        </table>
+    </div>
+
+    <!-- ৪. স্টক ইন ও আউট -->
+    <div id="stock" class="section">
+        <h3>দৈনিক স্টক ইন এবং আউট</h3>
+        <select id="stockType">
+            <option value="ইন (In)">স্টক ইন (প্রাপ্তি)</option>
+            <option value="আউট (Out)">স্টক আউট (ডেলিভারি)</option>
+        </select>
+        <input type="text" id="stockItemName" placeholder="প্রোডাক্ট ও কালার বিবরণ">
+        <input type="number" id="stockItemQty" placeholder="পরিমাণ (পিস)">
+        <label style="font-size: 13px; color: #555;">তারিখ:</label>
+        <input type="date" id="stockDate">
+        <button class="submit-btn" onclick="addStockRecord()">স্টক আপডেট করুন</button>
+
+        <table id="stockTable">
+            <tr><th>তারিখ</th><th>ধরণ</th><th>প্রোডাক্ট বিবরণ</th><th>পরিমাণ</th></tr>
+        </table>
+    </div>
+
+    <!-- ৫. আয়-ব্যয় ও স্টেডফাস্ট -->
+    <div id="accounts" class="section">
+        <h3>আয়, ব্যয় ও স্টেডফাস্ট ক্যাশ</h3>
+        <select id="accType">
+            <option value="আয়">দৈনিক আয় (ক্যাশ)</option>
+            <option value="ব্যয়">দৈনিক ব্যয়</option>
+            <option value="স্টেডফাস্ট উত্তোলন">স্টেডফাস্ট থেকে ক্যাশ উত্তোলন</option>
+            <option value="মূলধন জমা">মালিকের মূলধন জমা</option>
+            <option value="মূলধন উত্তোলন">মালিকের মূলধন উত্তোলন</option>
+        </select>
+        <input type="number" id="accAmount" placeholder="টাকার পরিমাণ (৳)">
+        <input type="text" id="accNote" placeholder="বিবরণ (পার্সেল আইডি বা কারণ)">
+        <label style="font-size: 13px; color: #555;">তারিখ:</label>
+        <input type="date" id="accDate">
+        <button class="submit-btn" onclick="addAccountRecord()">হিসাব যোগ করুন</button>
+
+        <table id="accTable">
+            <tr><th>তারিখ</th><th>খাত</th><th>টাকা</th><th>বিবরণ</th></tr>
+        </table>
+    </div>
+
+    <!-- ৬. কর্মচারী হাজিরা ও বেতন -->
+    <div id="hr" class="section">
+        <h3>কর্মচারী হাজিরা ও বেতন</h3>
+        <input type="text" id="empName" placeholder="কর্মচারীর নাম">
+        <select id="empStatus">
+            <option value="উপস্থিত">উপস্থিত</option>
+            <option value="অনুপস্থিত">অনুপস্থিত</option>
+        </select>
+        <input type="number" id="empSalary" placeholder="আজকের পরিশোধ/অগ্রিম বেতন (৳)">
+        <label style="font-size: 13px; color: #555;">তারিখ:</label>
+        <input type="date" id="empDate">
+        <button class="submit-btn" onclick="addEmpRecord()">হাজিরা ও বেতন সংরক্ষণ</button>
+
+        <table id="empTable">
+            <tr><th>তারিখ</th><th>নাম</th><th>হাজিরা</th><th>টাকা</th></tr>
+        </table>
+    </div>
+
+    <!-- ৭. নোটপ্যাড -->
+    <div id="notepad" class="section">
+        <h3>জরুরি নোটপ্যাড (১৫০ শব্দ)</h3>
+        <textarea id="noteContent" rows="6" placeholder="ব্যবসার গুরুত্বপূর্ণ নোট বা নির্দেশনা লিখে রাখুন..."></textarea>
+        <button class="submit-btn" onclick="saveNote()">নোট সেভ করুন</button>
+        <p id="wordCount" style="font-size: 12px; color: #666;">শব্দ সংখ্যা: ০</p>
+    </div>
+
+</div>
+
+<script>
+    // 🔥 আপনার ফায়ারবেস কনফিগারেশন এখানে বসাবেন 🔥
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "SENDER_ID",
+        appId: "APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // অটো তারিখ সেটআপ
+    window.onload = function() {
+        let today = new Date().toISOString().split('T')[0];
+        ['purDate', 'facDate', 'resDate', 'stockDate', 'accDate', 'empDate'].forEach(id => {
+            if(document.getElementById(id)) document.getElementById(id).value = today;
+        });
+    };
+
+    function switchTab(evt, tabName) {
+        let sections = document.getElementsByClassName("section");
+        for (let s of sections) s.classList.remove("active");
+        let buttons = document.getElementsByClassName("tab-btn");
+        for (let b of buttons) b.classList.remove("active");
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    // ১. কাপড় ক্রয়
+    function addPurchaseRecord() {
+        let name = document.getElementById('purItemName').value.trim();
+        let color = document.getElementById('purColor').value.trim();
+        let type = document.getElementById('purType').value.trim();
+        let qty = document.getElementById('purQty').value;
+        let price = parseFloat(document.getElementById('purPrice').value);
+        let date = document.getElementById('purDate').value;
+
+        if(!name || isNaN(price) || !date) { alert('সঠিক তথ্য ও মূল্য দিন!'); return; }
+        db.ref('purchases').push({ name, color, type, qty, price, date });
+        document.getElementById('purItemName').value = '';
+        document.getElementById('purColor').value = '';
+        document.getElementById('purType').value = '';
+        document.getElementById('purQty').value = '';
+        document.getElementById('purPrice').value = '';
+        alert('ক্রয় হিসাব সফলভাবে সংরক্ষিত হয়েছে!');
+    }
+
+    db.ref('purchases').on('value', (snapshot) => {
+        let table = document.getElementById('purchaseTable');
+        table.innerHTML = `<tr><th>তারিখ</th><th>আইটেম</th><th>কালার ও ধরন</th><th>পিস</th><th>মূল্য</th></tr>`;
+        let totalPurchase = 0;
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = table.insertRow();
+            row.innerHTML = `<td>${data.date}</td><td>${data.name}</td><td>${data.color} (${data.type})</td><td>${data.qty || 0} পিস</td><td>৳ ${data.price}</td>`;
+            totalPurchase += parseFloat(data.price || 0);
+        });
+        document.getElementById('totalPurchaseCost').innerText = '৳ ' + totalPurchase;
+    });
+
+    // ২. কারখানা
+    function addNewFactory() {
+        let name = document.getElementById('facRegName').value.trim();
+        let phone = document.getElementById('facRegPhone').value.trim();
+        if(!name || !phone) { alert('নাম ও নম্বর দিন!'); return; }
+        db.ref('factories_list').push({ name, phone });
+        document.getElementById('facRegName').value = '';
+        document.getElementById('facRegPhone').value = '';
+        alert('কারখানা তালিকাভুক্ত হয়েছে!');
+    }
+
+    db.ref('factories_list').on('value', (snapshot) => {
+        let listTable = document.getElementById('factoryListTable');
+        let dropdown = document.getElementById('facOrderName');
+        listTable.innerHTML = `<tr><th>নাম</th><th>নম্বর</th><th>অ্যাকশন</th></tr>`;
+        dropdown.innerHTML = `<option value="">কারখানা সিলেক্ট করুন</option>`;
+
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = listTable.insertRow();
+            row.innerHTML = `<td>${data.name}</td><td>${data.phone}</td><td><a class="action-btn call-btn" href="tel:${data.phone}">কল</a> <a class="action-btn whatsapp-btn" href="https://wa.me/${data.phone}" target="_blank">WA</a></td>`;
+            let opt = document.createElement('option');
+            opt.value = data.name;
+            opt.textContent = data.name;
+            dropdown.appendChild(opt);
+        });
+    });
+
+    function addFactoryRecord() {
+        let name = document.getElementById('facOrderName').value;
+        let itemName = document.getElementById('facItemName').value;
+        let qty = document.getElementById('facQty').value;
+        let date = document.getElementById('facDate').value;
+        if(!name || !itemName || !date) { alert('সব তথ্য পূরণ করুন!'); return; }
+        db.ref('factory_orders').push({ name, itemName, qty, date });
+        document.getElementById('facItemName').value = '';
+        document.getElementById('facQty').value = '';
+        alert('অর্ডার সংরক্ষিত হয়েছে!');
+    }
+
+    db.ref('factory_orders').on('value', (snapshot) => {
+        let table = document.getElementById('factoryTable');
+        table.innerHTML = `<tr><th>তারিখ</th><th>কারখানা</th><th>বিবরণ</th><th>পিস</th></tr>`;
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = table.insertRow();
+            row.innerHTML = `<td>${data.date}</td><td>${data.name}</td><td>${data.itemName}</td><td>${data.qty} পিস</td>`;
+        });
+    });
+
+    // ৩. রিসেলার
+    function addNewReseller() {
+        let name = document.getElementById('resRegName').value.trim();
+        let phone = document.getElementById('resRegPhone').value.trim();
+        if(!name || !phone) { alert('নাম ও নম্বর দিন!'); return; }
+        db.ref('resellers_list').push({ name, phone });
+        document.getElementById('resRegName').value = '';
+        document.getElementById('resRegPhone').value = '';
+        alert('রিসেলার তালিকাভুক্ত হয়েছে!');
+    }
+
+    db.ref('resellers_list').on('value', (snapshot) => {
+        let listTable = document.getElementById('resellerListTable');
+        let dropdown = document.getElementById('resOrderName');
+        listTable.innerHTML = `<tr><th>নাম</th><th>নম্বর</th><th>কল করুন</th></tr>`;
+        dropdown.innerHTML = `<option value="">রিসেলার সিলেক্ট করুন</option>`;
+
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = listTable.insertRow();
+            row.innerHTML = `<td>${data.name}</td><td>${data.phone}</td><td><a class="action-btn call-btn" href="tel:${data.phone}">কল</a></td>`;
+            let opt = document.createElement('option');
+            opt.value = data.name;
+            opt.textContent = data.name;
+            dropdown.appendChild(opt);
+        });
+    });
+
+    function addResellerRecord() {
+        let name = document.getElementById('resOrderName').value;
+        let action = document.getElementById('resAction').value;
+        let details = document.getElementById('resItemDetails').value;
+        let date = document.getElementById('resDate').value;
+        if(!name || !details || !date) { alert('সব তথ্য দিন!'); return; }
+        db.ref('reseller_records').push({ name, action, details, date });
+        document.getElementById('resItemDetails').value = '';
+        alert('লেনদেন সংরক্ষিত হয়েছে!');
+    }
+
+    db.ref('reseller_records').on('value', (snapshot) => {
+        let table = document.getElementById('resellerTable');
+        table.innerHTML = `<tr><th>তারিখ</th><th>নাম</th><th>অবস্থা</th><th>বিবরণ</th></tr>`;
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = table.insertRow();
+            row.innerHTML = `<td>${data.date}</td><td>${data.name}</td><td>${data.action}</td><td>${data.details}</td>`;
+        });
+    });
+
+    // ৪. স্টক
+    function addStockRecord() {
+        let type = document.getElementById('stockType').value;
+        let item = document.getElementById('stockItemName').value;
+        let qty = document.getElementById('stockItemQty').value;
+        let date = document.getElementById('stockDate').value;
+        if(!item || !qty || !date) { alert('সব তথ্য দিন!'); return; }
+        db.ref('stock').push({ type, item, qty, date });
+        document.getElementById('stockItemName').value = '';
+        document.getElementById('stockItemQty').value = '';
+    }
+
+    db.ref('stock').on('value', (snapshot) => {
+        let table = document.getElementById('stockTable');
+        table.innerHTML = `<tr><th>তারিখ</th><th>ধরণ</th><th>প্রোডাক্ট বিবরণ</th><th>পরিমাণ</th></tr>`;
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = table.insertRow();
+            row.innerHTML = `<td>${data.date}</td><td>${data.type}</td><td>${data.item}</td><td>${data.qty} পিস</td>`;
+        });
+    });
+
+    // ৫. আয়, ব্যয় ও স্টেডফাস্ট
+    function addAccountRecord() {
+        let type = document.getElementById('accType').value;
+        let amount = parseFloat(document.getElementById('accAmount').value);
+        let note = document.getElementById('accNote').value;
+        let date = document.getElementById('accDate').value;
+        if(isNaN(amount) || !date) { alert('সঠিক পরিমাণ ও তারিখ দিন!'); return; }
+        db.ref('accounts').push({ type, amount, note, date });
+        document.getElementById('accAmount').value = '';
+        document.getElementById('accNote').value = '';
+    }
+
+    db.ref('accounts').on('value', (snapshot) => {
+        let table = document.getElementById('accTable');
+        table.innerHTML = `<tr><th>তারিখ</th><th>খাত</th><th>টাকা</th><th>বিবরণ</th></tr>`;
+        let totalInc = 0, totalExp = 0, totalSteadfast = 0, capital = 0;
+        
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = table.insertRow();
+            row.innerHTML = `<td>${data.date}</td><td>${data.type}</td><td>৳ ${data.amount}</td><td>${data.note}</td>`;
+
+            if(data.type === 'আয়') totalInc += data.amount;
+            if(data.type === 'ব্যয়') totalExp += data.amount;
+            if(data.type === 'স্টেডফাস্ট উত্তোলন') totalSteadfast += data.amount;
+            if(data.type === 'মূলধন জমা') capital += data.amount;
+            if(data.type === 'মূলধন উত্তোলন') capital -= data.amount;
+        });
+
+        document.getElementById('totalIncome').innerText = '৳ ' + totalInc;
+        document.getElementById('totalExpense').innerText = '৳ ' + totalExp;
+        document.getElementById('totalSteadfast').innerText = '৳ ' + totalSteadfast;
+        document.getElementById('ownerCapital').innerText = '৳ ' + capital;
+    });
+
+    // ৬. কর্মচারী
+    function addEmpRecord() {
+        let name = document.getElementById('empName').value;
+        let status = document.getElementById('empStatus').value;
+        let salary = document.getElementById('empSalary').value;
+        let date = document.getElementById('empDate').value;
+        if(!name || !date) { alert('নাম ও তারিখ দিন!'); return; }
+        db.ref('employees').push({ name, status, salary, date });
+        document.getElementById('empName').value = '';
+        document.getElementById('empSalary').value = '';
+    }
+
+    db.ref('employees').on('value', (snapshot) => {
+        let table = document.getElementById('empTable');
+        table.innerHTML = `<tr><th>তারিখ</th><th>নাম</th><th>হাজিরা</th><th>টাকা</th></tr>`;
+        snapshot.forEach((child) => {
+            let data = child.val();
+            let row = table.insertRow();
+            row.innerHTML = `<td>${data.date}</td><td>${data.name}</td><td>${data.status}</td><td>৳ ${data.salary || 0}</td>`;
+        });
+    });
+
+    // ৭. নোটপ্যাড
+    function saveNote() {
+        let note = document.getElementById('noteContent').value;
+        db.ref('notepad').set({ note });
+        alert('নোট সংরক্ষিত হয়েছে!');
+    }
+
+    db.ref('notepad').on('value', (snapshot) => {
+        if(snapshot.exists()) {
+            document.getElementById('noteContent').value = snapshot.val().note || '';
+        }
+    });
+</script>
+
+</body>
+</html>
